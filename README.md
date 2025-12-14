@@ -18,4 +18,4 @@ The SX126x under test was inserted into the RadioHAT and its RF output connected
 One iteration of the test takes approximately 30 minutes, mainly due to the number of possible configurations that must be tested and the time spent waiting for the RF output level to stabilize.
 
 ## Data processing & outputs
-TODO
+The measured data was processed using the `py/process.py` script. It takes the input CSV log files and produces an output CSV file with determined optimized PA configurations, as well as a code snippet of the optimized PA lookup table usable in RadioLib. For the processing logic, see the script itself. 
