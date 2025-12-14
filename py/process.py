@@ -22,6 +22,9 @@ def parse_rf_data(csv_file_path: str) -> List[Dict[str, float]]:
     
     with open(csv_file_path, 'r', newline='', encoding='utf-8') as f:
         reader = csv.reader(f)
+        # first 5 lines are the header, skip them
+        for i in range(5):
+          next(reader)
         
         # Read header row (already split into list by csv.reader)
         header_line = next(reader)
@@ -58,7 +61,7 @@ def main(log_dir_path: str):
             continue
 
         # Parse data
-        data = parse_rf_data(filename)
+        data = parse_rf_data(log_dir_path + "/" + filename)
         num_measurements += 1
         
         # get the configured power levels
@@ -91,13 +94,15 @@ def main(log_dir_path: str):
 
     # we have parsed everything, find the most common combinations for each power level
     out = open("out/optimized.h", "w")
+    out.write("const SX126x::paTableEntry_t paOptTable[32] = {\n")
     for pwr in power_levels:
         entries = filter_by_key('target', pwr, opt_settings)
         cfg_counts = Counter(e['paCfg'] for e in entries)
         print(f"Optimized {pwr:2.0f} dBm: {cfg_counts.most_common(1)[0][0]} ({cfg_counts.most_common(1)[0][1]}/{num_measurements} measurements)")
         cfg = cfg_counts.most_common(1)[0][0].split(',')
-        out.write(f"{{ .paDutyCycle = {cfg[1]}, .hpMax = {cfg[2]}, .paVal = {cfg[0]} }},\n")
+        out.write(f"  {{ .paDutyCycle = {cfg[1]}, .hpMax = {cfg[2]}, .paVal = {cfg[0]} }},\n")
     
+    out.write("};\n")
     out.close()
 
 if __name__ == "__main__":
