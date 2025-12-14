@@ -63,7 +63,7 @@ static void measure_and_print(int pwr, bool optimize) {
   dc_powermon_read_vbus(&v_bus);
 
   // print it out
-  fprintf(stdout, "%14.2f,%14.2f,%11.2f,%11.2f,%10.2f",
+  fprintf(stdout, "%26.2f,%14.2f,%11.2f,%11.2f,%10.2f",
     (double)rf_pwr, (double)v_bus, (double)v_shunt, (double)i_shunt, (double)p_shunt);
   fflush(stdout);
 
@@ -120,7 +120,7 @@ int main(int argc, char** argv) {
   fprintf(stdout, "setCurrentLimit, code %d\n\n", state);
 
   // print the header
-  fprintf(stdout, "Set [dBm],Measured unoptimized [dBm],Bus voltage[V],Voltage[mV],Current[mA],Power [mW],Measured optimized [dBm],Bus voltage[V],Voltage[mV],Current[mA],Power [mW]\n"); 
+  fprintf(stdout, "Set [dBm],Measured unoptimized [dBm],Bus voltage[V],Voltage[mV],Current[mA],Power [mW], Measured optimized [dBm],Bus voltage[V],Voltage[mV],Current[mA],Power [mW]\n"); 
   
   // iterate over all possible output power levels and compare the unoptimized and optimized output
   for(int pwr = pwr_min; pwr <= pwr_max; pwr++) {
@@ -132,6 +132,9 @@ int main(int argc, char** argv) {
       
       // optimized version
       measure_and_print(pwr, true);
+      
+      fprintf(stdout, "\n");
+      fflush(stdout);
     }
   }
   
