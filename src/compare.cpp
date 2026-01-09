@@ -129,6 +129,7 @@ int main(int argc, char** argv) {
 
       // unoptimized version
       measure_and_print(pwr, false);
+      fprintf(stdout, ",");
       
       // optimized version
       measure_and_print(pwr, true);
