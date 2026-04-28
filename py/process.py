@@ -3,9 +3,11 @@ import os
 from typing import List, Dict
 from collections import Counter 
 
-KEY_SET = "Set [dBm]"
+KEY_SET = "Set [dBm]" # "Set [dBm/2]" for LR2021
 KEY_MEASURED = "Measured [dBm]"
 KEY_POWER = "Power [mW]"
+KEY_PA_CONF_A = "paDutyCycle"
+KEY_PA_CONF_B = "hpMax" # "paSlc" for LR2021
 
 def get_unique_values(key: str, data: List[Dict[str, float]]) -> List[float]:
     unique_sets = sorted({row[key] for row in data})
@@ -47,8 +49,8 @@ def parse_rf_data(csv_file_path: str) -> List[Dict[str, float]]:
 
 
 def main(log_dir_path: str):
-    out = open("out/optimized.csv", "w")
-    out.write(f"Pout,{KEY_SET},paDutyCycle,hpMax,{KEY_MEASURED},{KEY_POWER}\n")
+    out = open("out/optimized.csv", "w+")
+    out.write(f"Pout,{KEY_SET},{KEY_PA_CONF_A},{KEY_PA_CONF_B},{KEY_MEASURED},{KEY_POWER}\n")
     opt_settings: List[Dict[str, Any]] = []
     power_levels = []
 
@@ -70,8 +72,8 @@ def main(log_dir_path: str):
         for pwr in power_levels:
             # find the actual measured value with the default PA configuration, this is the reference
             entries = filter_by_key(KEY_SET, pwr, data)
-            entries = filter_by_key("paDutyCycle", 4, entries)
-            entries = filter_by_key("hpMax", 7, entries)
+            entries = filter_by_key(KEY_PA_CONF_A, 4, entries)
+            entries = filter_by_key(KEY_PA_CONF_B, 7, entries)
             ref_level = entries[0][KEY_MEASURED]
             ref_power = entries[0][KEY_POWER]
         
@@ -80,7 +82,7 @@ def main(log_dir_path: str):
             entries.sort(key=lambda x: x[KEY_POWER])
             optimal = entries[0]
             optimal['target'] = pwr
-            optimal['paCfg'] = f"{optimal[KEY_SET]:.0f},{optimal['paDutyCycle']:.0f},{optimal['hpMax']:.0f}"
+            optimal['paCfg'] = f"{optimal[KEY_SET]:.0f},{optimal[KEY_PA_CONF_A]:.0f},{optimal[KEY_PA_CONF_B]:.0f}"
             opt_settings.append(optimal)
 
             # the first one is the result
@@ -88,7 +90,7 @@ def main(log_dir_path: str):
             #print(f"Optimized {pwr:2.0f} dBm: actual={optimal[KEY_MEASURED]} (was {ref_level:.2f}) Power: {ref_power} -> {optimal[KEY_POWER]} (-{saving:.2f}%)")
             
             # dump it to file for further analysis
-            out.write(f"{pwr:.0f},{optimal[KEY_SET]:.0f},{optimal['paDutyCycle']:.0f},{optimal['hpMax']:.0f},{optimal[KEY_MEASURED]},{optimal[KEY_POWER]}\n")
+            out.write(f"{pwr:.0f},{optimal[KEY_SET]:.0f},{optimal[KEY_PA_CONF_A]:.0f},{optimal[KEY_PA_CONF_B]:.0f},{optimal[KEY_MEASURED]},{optimal[KEY_POWER]}\n")
     
     out.close()
 
@@ -100,7 +102,7 @@ def main(log_dir_path: str):
         cfg_counts = Counter(e['paCfg'] for e in entries)
         print(f"Optimized {pwr:2.0f} dBm: {cfg_counts.most_common(1)[0][0]} ({cfg_counts.most_common(1)[0][1]}/{num_measurements} measurements)")
         cfg = cfg_counts.most_common(1)[0][0].split(',')
-        out.write(f"  {{ .paDutyCycle = {cfg[1]}, .hpMax = {cfg[2]}, .paVal = {cfg[0]} }},\n")
+        out.write(f"  {{ .{KEY_PA_CONF_A} = {cfg[1]}, .{KEY_PA_CONF_B} = {cfg[2]}, .paVal = {cfg[0]} }},\n")
     
     out.write("};\n")
     out.close()
@@ -108,7 +110,7 @@ def main(log_dir_path: str):
 if __name__ == "__main__":
     import sys
     if len(sys.argv) != 2:
-        print("Usage: python script.py <log_dir_path>")
+        print("Usage: python process.py <log_dir_path>")
         sys.exit(1)
     
     main(sys.argv[1])
